@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Video Previews</title>
+</head>
+<body>
+<div id="VideoPreviewsConfigPage" data-role="page" class="page type-interior pluginConfigurationPage"
+     data-require="emby-input,emby-button,emby-select,emby-checkbox">
+    <div data-role="content">
+        <div class="content-primary">
+            <form id="VideoPreviewsConfigForm">
+                <div class="verticalSection">
+                    <h2>Vorschau-Montage</h2>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="SegmentCount">Anzahl Stellen</label>
+                        <input id="SegmentCount" name="SegmentCount" type="number" is="emby-input" min="1" max="20" />
+                        <div class="fieldDescription">Wie viele Positionen im Video (z.B. 5 oder 8).</div>
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="SegmentSeconds">Sekunden pro Stelle</label>
+                        <input id="SegmentSeconds" name="SegmentSeconds" type="number" is="emby-input" min="0.5" step="0.5" />
+                        <div class="fieldDescription">Beispiele: 5×3s, 8×1s.</div>
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="Height">Höhe (px)</label>
+                        <input id="Height" name="Height" type="number" is="emby-input" min="0" step="10" />
+                        <div class="fieldDescription">Vorschau wird auf diese Höhe skaliert (Breite automatisch). 0 = Originalauflösung.</div>
+                    </div>
+                </div>
+
+                <div class="verticalSection">
+                    <h2>Libraries</h2>
+                    <div class="fieldDescription" style="margin-bottom:1em;">Pro Library aktivieren. Zahl = generierte / gesamte Videos.</div>
+                    <div id="LibList"></div>
+                </div>
+
+                <div>
+                    <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                        <span>Speichern</span>
+                    </button>
+                    <button is="emby-button" type="button" id="GenerateNow" class="raised block emby-button">
+                        <span>Jetzt generieren</span>
+                    </button>
+                    <button is="emby-button" type="button" id="Refresh" class="raised block emby-button">
+                        <span>Status aktualisieren</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        var VideoPreviewsConfig = { pluginUniqueId: 'a8c4e1f0-3b2d-4e6a-9c7b-1f2e3d4c5b6a' };
+
+        function vpLoadLibraries(enabled) {
+            var statusUrl = ApiClient.getUrl('VideoPreviews/Status');
+            return Promise.all([
+                ApiClient.getVirtualFolders(),
+                ApiClient.ajax({ type: 'GET', url: statusUrl, dataType: 'json' }).catch(function () { return []; })
+            ]).then(function (res) {
+                var folders = res[0] || [];
+                var status = res[1] || [];
+                var statusById = {};
+                status.forEach(function (s) { statusById[s.Id] = s; });
+
+                var html = '';
+                folders.forEach(function (f) {
+                    var st = statusById[f.ItemId];
+                    var count = st ? (st.Generated + ' / ' + st.Total) : '–';
+                    var checked = enabled.indexOf(f.ItemId) !== -1 ? ' checked' : '';
+                    html += '<div class="checkboxContainer">'
+                        + '<label class="emby-checkbox-label">'
+                        + '<input type="checkbox" is="emby-checkbox" class="vpLib" data-id="' + f.ItemId + '"' + checked + ' />'
+                        + '<span>' + f.Name + ' &nbsp;<span style="opacity:.7">(' + count + ')</span></span>'
+                        + '</label></div>';
+                });
+                document.querySelector('#LibList').innerHTML = html || '<div class="fieldDescription">Keine Libraries gefunden.</div>';
+            });
+        }
+
+        function vpLoad() {
+            Dashboard.showLoadingMsg();
+            ApiClient.getPluginConfiguration(VideoPreviewsConfig.pluginUniqueId).then(function (config) {
+                document.querySelector('#SegmentCount').value = config.SegmentCount;
+                document.querySelector('#SegmentSeconds').value = config.SegmentSeconds;
+                document.querySelector('#Height').value = config.Height;
+                vpLoadLibraries(config.EnabledLibraries || []).then(function () {
+                    Dashboard.hideLoadingMsg();
+                });
+            });
+        }
+
+        document.querySelector('#VideoPreviewsConfigPage').addEventListener('pageshow', vpLoad);
+
+        document.querySelector('#Refresh').addEventListener('click', vpLoad);
+
+        document.querySelector('#GenerateNow').addEventListener('click', function () {
+            Dashboard.showLoadingMsg();
+            ApiClient.getScheduledTasks().then(function (tasks) {
+                var task = tasks.filter(function (t) { return t.Key === 'VideoPreviewsGenerate'; })[0];
+                Dashboard.hideLoadingMsg();
+                if (task) {
+                    ApiClient.startScheduledTask(task.Id).then(function () {
+                        Dashboard.alert('Generierung gestartet. Status unter Dashboard → Geplante Aufgaben.');
+                    });
+                } else {
+                    Dashboard.alert('Aufgabe nicht gefunden.');
+                }
+            });
+        });
+
+        document.querySelector('#VideoPreviewsConfigForm').addEventListener('submit', function (e) {
+            Dashboard.showLoadingMsg();
+            ApiClient.getPluginConfiguration(VideoPreviewsConfig.pluginUniqueId).then(function (config) {
+                config.SegmentCount = parseInt(document.querySelector('#SegmentCount').value, 10) || 5;
+                config.SegmentSeconds = parseFloat(document.querySelector('#SegmentSeconds').value) || 3;
+                config.Height = parseInt(document.querySelector('#Height').value, 10) || 0;
+                config.EnabledLibraries = Array.prototype.map.call(
+                    document.querySelectorAll('.vpLib:checked'),
+                    function (c) { return c.getAttribute('data-id'); });
+                ApiClient.updatePluginConfiguration(VideoPreviewsConfig.pluginUniqueId, config).then(function (result) {
+                    Dashboard.processPluginConfigurationUpdateResult(result);
+                });
+            });
+            e.preventDefault();
+            return false;
+        });
+    </script>
+</div>
+</body>
+</html>

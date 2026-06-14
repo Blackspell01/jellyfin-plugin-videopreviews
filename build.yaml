@@ -1,0 +1,15 @@
+name: "Video Previews"
+guid: "a8c4e1f0-3b2d-4e6a-9c7b-1f2e3d4c5b6a"
+version: "1.0.0.0"
+targetAbi: "10.11.0.0"
+framework: "net9.0"
+overview: "Pre-generated hover video previews per library."
+description: >
+  Generates small looping preview clips (e.g. 5x3s or 8x1s) per item via a
+  scheduled task and serves them at /VideoPreviews/{id} for hover previews.
+category: "General"
+owner: "Blackspell01"
+artifacts:
+- "Jellyfin.Plugin.VideoPreviews.dll"
+changelog: >
+  1.0.0.0 - Initial release.

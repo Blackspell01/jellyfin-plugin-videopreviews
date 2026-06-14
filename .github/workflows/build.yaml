@@ -1,0 +1,33 @@
+name: Build Plugin
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - '**/*.md'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        run: dotnet restore Jellyfin.Plugin.VideoPreviews/Jellyfin.Plugin.VideoPreviews.csproj
+
+      - name: Publish
+        run: dotnet publish Jellyfin.Plugin.VideoPreviews/Jellyfin.Plugin.VideoPreviews.csproj -c Release -o publish --no-restore
+
+      - name: Upload plugin DLL
+        uses: actions/upload-artifact@v4
+        with:
+          name: Jellyfin.Plugin.VideoPreviews
+          path: publish/Jellyfin.Plugin.VideoPreviews.dll
+          if-no-files-found: error
