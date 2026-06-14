@@ -14,5 +14,6 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
     {
         serviceCollection.AddSingleton<PreviewService>();
         serviceCollection.AddHostedService<NewItemNotifier>();
+        serviceCollection.AddHostedService<ScriptInjector>();
     }
 }

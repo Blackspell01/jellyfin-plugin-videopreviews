@@ -17,7 +17,9 @@ the browser does no heavy work — at hover time it just plays a ready static fi
   - Höhe (downscale height; 0 = source).
   - Per-library **checkbox** to enable, with a `generated / total` counter.
   - Buttons: **Speichern**, **Jetzt generieren**, **Status aktualisieren**.
-- **`web/vidprev.js`**: inject into Jellyfin's web `index.html` to actually show the previews on hover.
+- **Client script auto-injection**: on startup the plugin copies `vidprev.js` into the web client folder
+  and adds the `<script>` tag to `index.html` itself (idempotent; re-applied after Jellyfin updates).
+  Nothing to edit by hand. (Needs the Jellyfin process to have write access to the web folder.)
 
 ## Build (GitHub Actions)
 Pushing to `main` runs `.github/workflows/build.yaml`, which does `dotnet publish` and uploads
@@ -32,9 +34,8 @@ Pushing to `main` runs `.github/workflows/build.yaml`, which does `dotnet publis
    (e.g. `/var/lib/jellyfin/plugins/VideoPreviews/` or the Docker config volume).
 2. Restart Jellyfin. The plugin appears under Dashboard → Plugins.
 3. Open its config, pick libraries + the N×T values, **Speichern**, then **Jetzt generieren**.
-4. Inject the hover snippet: add `<script defer src="vidprev.js"></script>` to the web client's
-   `index.html` and place `vidprev.js` next to it. (Web-client mods are overwritten on Jellyfin
-   updates and must be re-applied.)
+4. Hover previews are wired up **automatically** — the plugin injects its client script into the web
+   client on startup. Just hard-refresh the browser (Ctrl/Cmd+Shift+R) after install.
 
 ## Automatic generation (new videos)
 - The scheduled task has a **daily** default trigger and is **incremental** (already-generated items

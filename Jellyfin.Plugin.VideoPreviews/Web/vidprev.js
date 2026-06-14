@@ -1,8 +1,7 @@
 (function () {
-    // Hover-Vorschau für Jellyfin-Web. Spielt die vom Plugin VORGENERIERTE Datei
-    // /VideoPreviews/{id}.mp4 ab (statisch, sofort, glatt). Existiert keine -> 404 -> nichts.
-    // In Jellyfins index.html einbinden:  <script defer src="vidprev.js"></script>
-    var HOVER_DELAY = 200; // ms bis Start
+    // Wird vom Plugin automatisch in die Web-index.html eingehängt.
+    // Hover über eine Card -> spielt die vorgenerierte Datei /VideoPreviews/{id} (statisch, sofort, glatt).
+    var HOVER_DELAY = 200;
 
     function token() {
         try { return window.ApiClient && ApiClient.accessToken ? ApiClient.accessToken() : null; } catch (e) { return null; }
@@ -37,7 +36,6 @@
         overlay.style.display = 'block';
         vid.src = previewUrl(id);
         vid.play().catch(function () {});
-        // wenn die Datei nicht existiert (404) -> sauber ausblenden
         vid.addEventListener('error', function onerr() { vid.removeEventListener('error', onerr); clear(); }, { once: true });
     }
 
@@ -57,9 +55,8 @@
         if (currentCard && !currentCard.contains(e.relatedTarget)) { currentCard = null; clear(); }
     });
 
-    // bei Navigation aufräumen
     var lastUrl = location.href;
     setInterval(function () { if (location.href !== lastUrl) { lastUrl = location.href; currentCard = null; clear(); } }, 250);
 
-    console.log('vidprev: initialisiert (Plugin-Vorschauen)');
+    console.log('vidprev: aktiv (Plugin-Vorschauen)');
 })();
