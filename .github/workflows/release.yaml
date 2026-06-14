@@ -1,0 +1,70 @@
+name: Release
+
+on:
+  push:
+    tags: [ "v*" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Determine version
+        id: ver
+        run: echo "v=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish DLL
+        run: dotnet publish Jellyfin.Plugin.VideoPreviews/Jellyfin.Plugin.VideoPreviews.csproj -c Release -o publish
+
+      - name: Package zip
+        id: pkg
+        run: |
+          mkdir -p pkg
+          cp publish/Jellyfin.Plugin.VideoPreviews.dll pkg/
+          python3 .github/gen_meta.py "${{ steps.ver.outputs.v }}"
+          ZIP="videopreviews_${{ steps.ver.outputs.v }}.zip"
+          (cd pkg && zip -r "../$ZIP" .)
+          echo "zip=$ZIP" >> "$GITHUB_OUTPUT"
+          echo "md5=$(md5sum "$ZIP" | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.pkg.outputs.zip }}
+
+      - name: Build manifest for Pages
+        run: python3 .github/gen_manifest.py "${{ steps.ver.outputs.v }}" "${{ steps.pkg.outputs.md5 }}" "${{ steps.pkg.outputs.zip }}" "${{ github.repository }}" "${{ github.ref_name }}"
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "_site"
+
+      - name: Deploy to Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
