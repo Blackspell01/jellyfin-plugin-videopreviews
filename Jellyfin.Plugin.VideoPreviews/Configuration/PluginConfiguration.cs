@@ -16,8 +16,14 @@ public class PluginConfiguration : BasePluginConfiguration
         SegmentCount = 5;
         SegmentSeconds = 3;
         Height = 480;
+        AutoGenerate = true;
         EnabledLibraries = new Collection<string>();
     }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether previews are generated automatically when new videos are added.
+    /// </summary>
+    public bool AutoGenerate { get; set; }
 
     /// <summary>
     /// Gets or sets how many positions (segments) the montage is made of (e.g. 5 or 8).

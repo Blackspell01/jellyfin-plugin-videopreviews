@@ -36,6 +36,25 @@ Pushing to `main` runs `.github/workflows/build.yaml`, which does `dotnet publis
    `index.html` and place `vidprev.js` next to it. (Web-client mods are overwritten on Jellyfin
    updates and must be re-applied.)
 
+## Automatic generation (new videos)
+- The scheduled task has a **daily** default trigger and is **incremental** (already-generated items
+  are skipped), so newly added videos get previews on the next run. You can change the schedule under
+  Dashboard → Scheduled Tasks.
+- Additionally, a background **new-item listener** generates the preview shortly after a video is added
+  (one at a time, so a big scan doesn't spawn many ffmpeg jobs). Toggle via
+  "Neue Videos automatisch erkennen & generieren" in the plugin config.
+
+## Install via repository URL (auto-updates)
+Push a tag like `v1.0.0.0` → `.github/workflows/release.yaml` builds a release zip, attaches it to a
+GitHub Release, and updates `manifest.json`. Then in Jellyfin:
+
+Dashboard → Plugins → Repositories → **Add**, URL:
+```
+https://raw.githubusercontent.com/Blackspell01/jellyfin-plugin-videopreviews/main/manifest.json
+```
+The plugin then appears in the catalog and updates automatically. (Until the first tagged release the
+manifest is empty — use the manual DLL install above in the meantime.)
+
 ## Notes / limits
 - Storage ≈ one small mp4 per item (depends on height/length).
 - New items get previews on the next task run.

@@ -1,0 +1,65 @@
+name: Release Plugin
+
+# Push a tag like v1.0.0.0 to build a release zip, attach it to a GitHub Release,
+# and update manifest.json (the URL you add in Jellyfin → Dashboard → Plugins → Repositories).
+
+on:
+  push:
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install JPRM
+        run: python -m pip install jprm
+
+      - name: Determine version
+        id: ver
+        run: echo "v=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Set version in build.yaml
+        run: sed -i "s/^version:.*/version: \"${{ steps.ver.outputs.v }}\"/" build.yaml
+
+      - name: Build plugin zip (JPRM)
+        id: build
+        run: |
+          ZIP=$(jprm --verbosity=info plugin build . | tail -n1)
+          echo "zip=$ZIP" >> "$GITHUB_OUTPUT"
+          ls -la "$ZIP"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.build.outputs.zip }}
+
+      - name: Update manifest.json
+        run: python .github/update_manifest.py "${{ steps.build.outputs.zip }}" "${{ steps.ver.outputs.v }}" "${{ github.repository }}" "${{ github.ref_name }}"
+
+      - name: Commit manifest.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add manifest.json
+          git commit -m "manifest: ${{ steps.ver.outputs.v }}" || echo "no changes"
+          git push origin HEAD:main

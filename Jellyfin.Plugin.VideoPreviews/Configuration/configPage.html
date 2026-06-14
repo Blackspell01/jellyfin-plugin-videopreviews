@@ -27,6 +27,13 @@
                         <input id="Height" name="Height" type="number" is="emby-input" min="0" step="10" />
                         <div class="fieldDescription">Vorschau wird auf diese Höhe skaliert (Breite automatisch). 0 = Originalauflösung.</div>
                     </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label class="emby-checkbox-label">
+                            <input id="AutoGenerate" name="AutoGenerate" type="checkbox" is="emby-checkbox" />
+                            <span>Neue Videos automatisch erkennen &amp; generieren</span>
+                        </label>
+                        <div class="fieldDescription">Erzeugt die Vorschau sofort, wenn ein neues Video hinzugefügt wird. Zusätzlich läuft der Task täglich.</div>
+                    </div>
                 </div>
 
                 <div class="verticalSection">
@@ -85,6 +92,7 @@
                 document.querySelector('#SegmentCount').value = config.SegmentCount;
                 document.querySelector('#SegmentSeconds').value = config.SegmentSeconds;
                 document.querySelector('#Height').value = config.Height;
+                document.querySelector('#AutoGenerate').checked = config.AutoGenerate !== false;
                 vpLoadLibraries(config.EnabledLibraries || []).then(function () {
                     Dashboard.hideLoadingMsg();
                 });
@@ -116,6 +124,7 @@
                 config.SegmentCount = parseInt(document.querySelector('#SegmentCount').value, 10) || 5;
                 config.SegmentSeconds = parseFloat(document.querySelector('#SegmentSeconds').value) || 3;
                 config.Height = parseInt(document.querySelector('#Height').value, 10) || 0;
+                config.AutoGenerate = document.querySelector('#AutoGenerate').checked;
                 config.EnabledLibraries = Array.prototype.map.call(
                     document.querySelectorAll('.vpLib:checked'),
                     function (c) { return c.getAttribute('data-id'); });
