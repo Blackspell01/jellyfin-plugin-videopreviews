@@ -1,0 +1,21 @@
+[
+  {
+    "guid": "a8c4e1f0-3b2d-4e6a-9c7b-1f2e3d4c5b6a",
+    "name": "Video Previews",
+    "description": "Pre-generated hover video previews per library.",
+    "overview": "Smooth pre-generated hover previews.",
+    "owner": "Blackspell01",
+    "category": "General",
+    "imageUrl": "",
+    "versions": [
+      {
+        "version": "1.0.0.0",
+        "changelog": "Release 1.0.0.0",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/Blackspell01/jellyfin-plugin-videopreviews/releases/download/v1.0.0.0/videopreviews_1.0.0.0.zip",
+        "checksum": "0aa9f9536b4f96b505e96ff4bc089b4c",
+        "timestamp": "2026-06-14T15:03:56.0000000Z"
+      }
+    ]
+  }
+]
